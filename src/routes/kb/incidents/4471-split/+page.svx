@@ -1,0 +1,57 @@
+---
+layout: runbook
+title: '#4471 split · three problems, not one'
+owner: mm-dev
+status: open
+reviewed: 2026-10-29
+signature: v1.eyJzdWIiOiI1NTAwIiwiYXVkIjoiY2hhbGxlbmdlOndoYXQtaXQtc2hvd3MiLCJpYXQiOjE3OTMyODE4ODUsImV4cCI6MTc5MzM2ODI4NX0.FNusLohNoPXQgWkHSR-ilCq4YECll3AWfFyZv3niYJs
+---
+
+<script>
+  import ProblemTable from '#lib/kb/ProblemTable.svelte';
+  import Callout from '#lib/kb/Callout.svelte';
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+</script>
+
+[#4471](/kb/incidents/4471) says "one issue, one fix queued". Its own cause table shows two
+causes, and the desk's notes name a third. The 412 reports hold three problems, each with a
+ticket of its own. A fix for the parser closes only the first.
+
+<Callout kind="warn">
+Fixing the shared parser does not fix the booking-v3 form hint or the one-day moves.
+Keep #4471 open for the parser only; follow the other two in their own tickets.
+</Callout>
+
+## The problems
+
+<ProblemTable ticket={4471} repo="manuel-martinez-dev/s01e03-what-it-shows" issues={{ parser: 1, hint: 2, 'one-day': 3 }} />
+
+**parser.** The shared parser reads every date month first. Every tenant on file writes the
+day first, so any date with a day of 12 or less comes out flipped: booked 7 April, invite on
+4 July. It hits app, email and booking-v2 form reports.
+
+**hint.** booking-v3 prints `MM/DD/YYYY` under its date field. People type what the hint says,
+and the form reads it the tenant's way, day first. Same flipped date, different bug: the fix
+is the hint (or the form's reading), not the parser. Only form reports from tenants on
+booking-v3.
+
+**one-day.** No flip at all. A date lands one day early: "Tuesday 6 October showed as
+Monday", "every booking in June is one day off", "Lisbon got Tuesday, Toronto got Monday",
+"the invite arrived before I made the booking". That points at time zones or the clock
+change, not date order. The old cause table counts these under `parser` with a footnote.
+
+## Why they were merged
+
+[Decision 0001](/kb/decisions/0001-dedupe-by-subject) merges on subject alone, and ten of
+the twelve subjects in #4471 are shared across problems ("Month and day swapped?" covers all three). The
+subject says what the reporter saw, not what broke. Intake's tag does not help either: it
+guesses from the reporter's browser, while the cause depends on the tenant and its form.
+Both 0001 and the [triage page](/kb/triage/dedupe) were last reviewed in June 2024.
+
+## What to do
+
+- Engineering: one fix per ticket. Do not close the hint or one-day tickets with the parser fix.
+- Desk: when a report shows a date moved by one day, not swapped, it is not #4471.
+- Decision 0001 needs a new record: merge on cause (tenant, form, channel), not subject.
+
+<RenderStamp {signature} />

@@ -5,7 +5,12 @@
   import { tenantOf } from '#lib/kb/locales';
   import { splitTicket, type Problem } from '#lib/kb/problems';
 
-  let { ticket, issues, repo }: { ticket: number; issues: Partial<Record<Problem, number>>; repo: string } = $props();
+  let {
+    ticket,
+    issues,
+    status = {},
+    repo,
+  }: { ticket: number; issues: Partial<Record<Problem, number>>; status?: Partial<Record<Problem, string>>; repo: string } = $props();
 
   const split = $derived(splitTicket(reports as Report[], ticket, tenantOf, notes.oneDayMove));
   const LABEL: Record<Problem, string> = {
@@ -23,30 +28,32 @@
 
 <table>
   <thead>
-    <tr><th>problem</th><th>reports</th><th>tenants</th><th>seen</th><th>ticket</th></tr>
+    <tr><th>problem</th><th>reports</th><th>tenants</th><th>seen</th><th>ticket</th><th>status</th></tr>
   </thead>
   <tbody>
     {#each split.groups as g (g.problem)}
-      <tr>
+      <tr class:open={status[g.problem] === 'open'}>
         <td><code>{g.problem}</code> {LABEL[g.problem]}</td>
-        <td>{g.reports.length}</td>
+        <td>{g.reports.length}{g.alsoIn ? '*' : ''}</td>
         <td>{g.tenants.length}</td>
         <td>{g.firstSeen} → {g.lastSeen}</td>
         <td>
           {#if issues[g.problem]}<a href="https://github.com/{repo}/issues/{issues[g.problem]}">{repo}#{issues[g.problem]}</a>{:else}none yet{/if}
         </td>
+        <td>{status[g.problem] ?? 'open'}</td>
       </tr>
     {/each}
   </tbody>
 </table>
 
 {#each split.groups as g (g.problem)}
-  {#if g.problem !== 'parser'}
-    <p class="ids"><code>{g.problem}</code> ({g.tenants.join(', ')}): {g.reports.length > 12 ? `${g.reports.length} reports` : g.reports.map((r) => r.id).join(', ')}</p>
+  {#if g.alsoIn}
+    <p class="ids">* {g.reports.length} reports the desk read as a one-day move, also counted under <code>{g.alsoIn}</code> where they are filed: {g.reports.map((r) => r.id).join(', ')} ({g.tenants.join(', ')}).</p>
   {/if}
 {/each}
 
 <style>
   .sum { font-size: 1.1rem; }
   .ids { color: var(--muted); font-size: 0.85em; }
+  .open td:last-child { color: var(--warn); font-weight: 600; }
 </style>

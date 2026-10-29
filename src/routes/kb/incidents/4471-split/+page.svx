@@ -13,32 +13,41 @@ signature: v1.eyJzdWIiOiI1NTAwIiwiYXVkIjoiY2hhbGxlbmdlOndoYXQtaXQtc2hvd3MiLCJpYX
   import RenderStamp from '#lib/kb/RenderStamp.svelte';
 </script>
 
-[#4471](/kb/incidents/4471) says "one issue, one fix queued". Its own cause table shows two
+[#4471](/kb/incidents/4471) said "one issue, one fix queued". Its own cause table shows two
 causes, and the desk's notes name a third. The 412 reports hold three problems, each with a
-ticket of its own. A fix for the parser closes only the first.
+ticket of its own.
+
+#4471 was closed on 5 October: the parser is fixed (`fix(dates): parse dd/mm for eu locales`),
+and the hint won't be fixed because booking-v3 was retired. Neither touches the one-day moves.
 
 <Callout kind="warn">
-Fixing the shared parser does not fix the booking-v3 form hint or the one-day moves.
-Keep #4471 open for the parser only; follow the other two in their own tickets.
+Closing #4471 does not close the one-day moves. They are not a date-order bug, so the parser
+fix cannot change them. Follow them in their own ticket.
 </Callout>
 
 ## The problems
 
-<ProblemTable ticket={4471} repo="manuel-martinez-dev/s01e03-what-it-shows" issues={{ parser: 1, hint: 2, 'one-day': 3 }} />
+<ProblemTable
+  ticket={4471}
+  repo="manuel-martinez-dev/s01e03-what-it-shows"
+  issues={{ parser: 1, hint: 2, 'one-day': 3 }}
+  status={{ parser: 'fixed', hint: "won't fix", 'one-day': 'open' }}
+/>
 
 **parser.** The shared parser reads every date month first. Every tenant on file writes the
 day first, so any date with a day of 12 or less comes out flipped: booked 7 April, invite on
-4 July. It hits app, email and booking-v2 form reports.
+4 July. It hits app, email and booking-v2 form reports. Fixed when #4471 closed.
 
 **hint.** booking-v3 prints `MM/DD/YYYY` under its date field. People type what the hint says,
 and the form reads it the tenant's way, day first. Same flipped date, different bug: the fix
 is the hint (or the form's reading), not the parser. Only form reports from tenants on
-booking-v3.
+booking-v3. Won't fix: booking-v3 is retired.
 
 **one-day.** No flip at all. A date lands one day early: "Tuesday 6 October showed as
 Monday", "every booking in June is one day off", "Lisbon got Tuesday, Toronto got Monday",
 "the invite arrived before I made the booking". That points at time zones or the clock
-change, not date order. The old cause table counts these under `parser` with a footnote.
+change, not date order. The desk files them under `parser` by tenant, so they are counted
+there too. Still open.
 
 ## Why they were merged
 
@@ -50,8 +59,8 @@ Both 0001 and the [triage page](/kb/triage/dedupe) were last reviewed in June 20
 
 ## What to do
 
-- Engineering: one fix per ticket. Do not close the hint or one-day tickets with the parser fix.
-- Desk: when a report shows a date moved by one day, not swapped, it is not #4471.
+- Engineering: the one-day ticket is still open. Look at time zones and the clock change in invite dates.
+- Desk: when a report shows a date moved by one day, not swapped, it is not #4471 and it is not fixed.
 - Decision 0001 needs a new record: merge on cause (tenant, form, channel), not subject.
 
 <RenderStamp {signature} />
